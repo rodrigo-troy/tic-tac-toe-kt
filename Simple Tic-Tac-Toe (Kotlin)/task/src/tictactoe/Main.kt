@@ -27,7 +27,7 @@ class SimpleGrid : Grid {
             row.withIndex().filter { (_, cell) -> cell.ch == '_' }.map { (j, _) -> i to j }
         }.toMutableList()
 
-        while (emptyCells.isNotEmpty()) {                                                         ˚
+        while (emptyCells.isNotEmpty()) {
             val (i, j) = emptyCells.random()
             emptyCells.remove(i to j)
             val randomChar = charList[0]
