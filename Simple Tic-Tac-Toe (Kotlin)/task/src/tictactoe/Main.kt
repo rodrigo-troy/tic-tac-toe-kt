@@ -2,21 +2,25 @@ package tictactoe
 
 data class Cell(val ch: Char) {
     override fun toString() = ch.toString()
+
+    fun isEmpty() = ch == '_'
+    fun isNotEmpty() = !isEmpty()
+    fun isX() = ch == 'X'
+    fun isO() = ch == 'O'
+    fun isNotX() = !isX()
+    fun isNotO() = !isO()
+    fun isNot(ch: Char) = this.ch != ch
 }
 
 interface Grid {
     val cells: List<MutableList<Cell>>
 }
 
-interface StringParsable {
-    fun fromString(input: String)
-}
-
 interface Displayable {
     fun display(grid: Grid)
 }
 
-class SimpleGrid : Grid, StringParsable {
+class RandomGrid : Grid {
     override var cells: List<MutableList<Cell>> = listOf(
         mutableListOf(Cell('_'), Cell('_'), Cell('_')),
         mutableListOf(Cell('_'), Cell('_'), Cell('_')),
@@ -38,13 +42,22 @@ class SimpleGrid : Grid, StringParsable {
             charList.add(charList.removeAt(0))
         }
     }
+}
 
-    override fun fromString(input: String) {
-        cells = input.chunked(3).map { row ->
-            row.map { ch ->
-                Cell(ch)
-            }.toMutableList()
-        }
+class UserDefinedGrid(input: String) : Grid {
+    override var cells: List<MutableList<Cell>> = listOf(
+        mutableListOf(Cell('_'), Cell('_'), Cell('_')),
+        mutableListOf(Cell('_'), Cell('_'), Cell('_')),
+        mutableListOf(Cell('_'), Cell('_'), Cell('_'))
+    )
+
+    init {
+        val charList = input.toList().map { Cell(it) }
+        cells = listOf(
+            charList.subList(0, 3).toMutableList(),
+            charList.subList(3, 6).toMutableList(),
+            charList.subList(6, 9).toMutableList()
+        )
     }
 }
 
@@ -62,14 +75,12 @@ class ConsoleDisplay : Displayable {
 
 class TicTacToe(private val grid: Grid, private val display: Displayable) {
     fun start() {
-        val string = readln()
-
         display.display(grid)
     }
 }
 
 fun main() {
-    val grid: Grid = SimpleGrid()
+    val grid: Grid = UserDefinedGrid(readln())
     val display: Displayable = ConsoleDisplay()
     val game = TicTacToe(grid, display)
     game.start()
