@@ -10,6 +10,14 @@ data class Cell(val ch: Char) {
     }
 }
 
+data class GameState(
+    val isXWins: Boolean,
+    val isOWins: Boolean,
+    val isDraw: Boolean,
+    val isImpossible: Boolean
+)
+
+
 interface Grid {
     val cells: MutableList<MutableList<Cell>>
 }
@@ -63,15 +71,15 @@ open class TicTacToe(private val grid: Grid, private val display: Displayable) {
 
     open fun start() {
         display.display(grid)
-        analyzeGameState(grid)
+        updateGameState(grid)
         printGameState()
     }
 
-    fun getGameState(): GameState {
-        return this.gameState
+    open fun getGameState(): GameState {
+        return this.gameState.copy()
     }
 
-    fun analyzeGameState(grid: Grid) {
+    fun updateGameState(grid: Grid) {
         val isXWins = hasThreeInARow(grid, Cell.X)
         val isOWins = hasThreeInARow(grid, Cell.O)
         val isDraw = checkGameDraw(isXWins, isOWins)
@@ -123,6 +131,8 @@ class InteractiveTicTacToe(private val grid: Grid, private val display: Displaya
     }
 
     fun play() {
+        var currentCell = Cell.X
+
         while (true) {
             val (i, j) = readCoordinates()
 
@@ -131,11 +141,22 @@ class InteractiveTicTacToe(private val grid: Grid, private val display: Displaya
                 continue
             }
 
-            grid.cells[i][j] = Cell.X
+            grid.cells[i][j] = currentCell
 
             display.display(grid)
-            break;
+
+            this.updateGameState(grid)
+
+            val currentState = getGameState()
+
+            if (currentState.isXWins || currentState.isOWins || currentState.isDraw) {
+                break
+            }
+
+            currentCell = if (currentCell == Cell.X) Cell.O else Cell.X
         }
+
+        printGameState()
     }
 
     private fun readCoordinates(): Pair<Int, Int> {
@@ -157,16 +178,8 @@ class InteractiveTicTacToe(private val grid: Grid, private val display: Displaya
     }
 }
 
-data class GameState(
-    val isXWins: Boolean,
-    val isOWins: Boolean,
-    val isDraw: Boolean,
-    val isImpossible: Boolean
-)
-
-
 fun main() {
-    val grid: Grid = UserDefinedGrid(readln())
+    val grid: Grid = EmptyGrid()
     val display: Displayable = ConsoleDisplay()
     val game = InteractiveTicTacToe(grid, display)
     game.start()
