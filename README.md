@@ -11,7 +11,6 @@ the optimal strategies.
 
 ## Features
 
-- Play against a computer opponent
 - Text-based interface
 - Simple and intuitive gameplay
 
