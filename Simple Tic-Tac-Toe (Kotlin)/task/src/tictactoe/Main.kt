@@ -3,14 +3,6 @@ package tictactoe
 data class Cell(val ch: Char) {
     override fun toString() = ch.toString()
 
-    fun isEmpty() = ch == '_'
-    fun isNotEmpty() = !isEmpty()
-    fun isX() = ch == 'X'
-    fun isO() = ch == 'O'
-    fun isNotX() = !isX()
-    fun isNotO() = !isO()
-    fun isNot(ch: Char) = this.ch != ch
-
     companion object {
         val EMPTY: Cell = Cell('_')
         val O: Cell = Cell('O')
@@ -19,7 +11,7 @@ data class Cell(val ch: Char) {
 }
 
 interface Grid {
-    val cells: List<List<Cell>>
+    val cells: MutableList<MutableList<Cell>>
 }
 
 interface Displayable {
@@ -27,11 +19,7 @@ interface Displayable {
 }
 
 class RandomGrid : Grid {
-    override var cells: List<MutableList<Cell>> = listOf(
-        mutableListOf(Cell('_'), Cell('_'), Cell('_')),
-        mutableListOf(Cell('_'), Cell('_'), Cell('_')),
-        mutableListOf(Cell('_'), Cell('_'), Cell('_'))
-    )
+    override val cells = List(3) { List(3) { Cell.EMPTY }.toMutableList() }.toMutableList()
 
     fun populateRandomly() {
         val charList = mutableListOf('X', 'O')
@@ -51,7 +39,11 @@ class RandomGrid : Grid {
 }
 
 class UserDefinedGrid(input: String) : Grid {
-    override val cells = input.chunked(3).map { it.map { Cell(it) } }
+    override val cells = input.chunked(3).map { it.map { Cell(it) }.toMutableList() }.toMutableList()
+}
+
+class EmptyGrid : Grid {
+    override val cells = List(3) { List(3) { Cell.EMPTY }.toMutableList() }.toMutableList()
 }
 
 class ConsoleDisplay : Displayable {
@@ -66,27 +58,33 @@ class ConsoleDisplay : Displayable {
     }
 }
 
-class TicTacToe(private val grid: Grid, private val display: Displayable) {
-    fun start() {
+open class TicTacToe(private val grid: Grid, private val display: Displayable) {
+    private var gameState: GameState = GameState(isXWins = false, isOWins = false, isDraw = false, isImpossible = false)
+
+    open fun start() {
         display.display(grid)
         analyzeGameState(grid)
+        printGameState()
     }
 
-    private fun analyzeGameState(grid: Grid) {
+    fun getGameState(): GameState {
+        return this.gameState
+    }
+
+    fun analyzeGameState(grid: Grid) {
         val isXWins = hasThreeInARow(grid, Cell.X)
         val isOWins = hasThreeInARow(grid, Cell.O)
         val isDraw = checkGameDraw(isXWins, isOWins)
         val isImpossible = checkGameImpossible(isXWins, isOWins)
-
-        printGameState(isImpossible, isDraw, isXWins, isOWins)
+        this.gameState = GameState(isXWins, isOWins, isDraw, isImpossible)
     }
 
-    private fun printGameState(isImpossible: Boolean, isDraw: Boolean, isXWins: Boolean, isOWins: Boolean) {
+    fun printGameState() {
         when {
-            isImpossible -> println("Impossible")
-            isDraw -> println("Draw")
-            isXWins -> println("X wins")
-            isOWins -> println("O wins")
+            gameState.isImpossible -> println("Impossible")
+            gameState.isXWins -> println("X wins")
+            gameState.isOWins -> println("O wins")
+            gameState.isDraw -> println("Draw")
             else -> println("Game not finished")
         }
     }
@@ -118,9 +116,58 @@ class TicTacToe(private val grid: Grid, private val display: Displayable) {
     }
 }
 
+class InteractiveTicTacToe(private val grid: Grid, private val display: Displayable) : TicTacToe(grid, display) {
+    override fun start() {
+        display.display(grid)
+        play()
+    }
+
+    fun play() {
+        while (true) {
+            val (i, j) = readCoordinates()
+
+            if (grid.cells[i][j] != Cell.EMPTY) {
+                println("This cell is occupied! Choose another one!")
+                continue
+            }
+
+            grid.cells[i][j] = Cell.X
+
+            display.display(grid)
+            break;
+        }
+    }
+
+    private fun readCoordinates(): Pair<Int, Int> {
+        while (true) {
+            val (i, j) = readln().split(" ").map { it.toIntOrNull() }
+
+            if (i == null || j == null) {
+                println("You should enter numbers!")
+                continue
+            }
+
+            if (i !in 1..3 || j !in 1..3) {
+                println("Coordinates should be from 1 to 3!")
+                continue
+            }
+
+            return i - 1 to j - 1
+        }
+    }
+}
+
+data class GameState(
+    val isXWins: Boolean,
+    val isOWins: Boolean,
+    val isDraw: Boolean,
+    val isImpossible: Boolean
+)
+
+
 fun main() {
     val grid: Grid = UserDefinedGrid(readln())
     val display: Displayable = ConsoleDisplay()
-    val game = TicTacToe(grid, display)
+    val game = InteractiveTicTacToe(grid, display)
     game.start()
 }
